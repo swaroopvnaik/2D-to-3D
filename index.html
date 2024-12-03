@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D to 3D Drawing and Image Conversion</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="toolbar">
+        <label for="colorPicker">Pencil Color:</label>
+        <input type="color" id="colorPicker" value="#000000">
+        <label for="depth">3D Depth:</label>
+        <input type="number" id="depth" value="5" min="1" max="50" step="1">
+        <button id="convertTo3D">Convert Drawing to 3D</button>
+        <br>
+        <label for="imageUpload">Upload Image(s):</label>
+        <input type="file" id="imageUpload" multiple accept="image/*">
+        <button id="addImagesTo3D">Add Images to 3D</button>
+    </div>
+    <canvas id="drawCanvas"></canvas>
+    <div id="3dContainer"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
