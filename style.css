@@ -1,4 +1,3 @@
-
 body {
     margin: 0;
     display: flex;
@@ -57,6 +56,18 @@ body {
     animation: scaleIn 3s ease-out;
 }
 
+/* New Button Styling */
+#clearButton,
+#downloadButton {
+    background: #ff6666;
+    margin-right: 10px;
+}
+
+#clearButton:hover,
+#downloadButton:hover {
+    background: #ff4444;
+}
+
 /* Animations */
 @keyframes fadeIn {
     from {
@@ -88,3 +99,4 @@ body {
         opacity: 1;
     }
 }
+

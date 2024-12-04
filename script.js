@@ -1,10 +1,11 @@
-
 const drawCanvas = document.getElementById('drawCanvas');
 const colorPicker = document.getElementById('colorPicker');
 const depthInput = document.getElementById('depth');
 const convertTo3DButton = document.getElementById('convertTo3D');
 const imageUpload = document.getElementById('imageUpload');
 const addImagesTo3DButton = document.getElementById('addImagesTo3D');
+const clearButton = document.getElementById('clearButton');
+const downloadButton = document.getElementById('downloadButton');
 
 drawCanvas.width = window.innerWidth / 2;
 drawCanvas.height = window.innerHeight;
@@ -122,7 +123,20 @@ function convertImageTo3D(image) {
     const plane = new THREE.Mesh(geometry, material);
     plane.rotation.x = - Math.PI / 2; // Lay the image flat
 
+    // Store the image data URL with the mesh
+    plane.userData.imageData = getImageDataUrl(image);
+
     scene.add(plane);
+}
+
+// Function to convert image to data URL
+function getImageDataUrl(img) {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    return canvas.toDataURL('image/png');
 }
 
 // Handle image upload
@@ -146,6 +160,106 @@ addImagesTo3DButton.addEventListener('click', () => {
     });
 });
 
+// Clear both 2D canvas and 3D scene
+clearButton.addEventListener('click', () => {
+    // Clear 2D canvas
+    ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    points = [];
+
+    // Clear 3D scene
+    while(scene.children.length > 0){ 
+        scene.remove(scene.children[0]); 
+    }
+});
+
+// Generate interactive HTML file
+function generateInteractiveHTML() {
+    const threeJSCode = `
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        camera.position.set(0, 20, 50);
+        controls.update();
+
+        ${scene.children.map(child => {
+            if (child instanceof THREE.Mesh) {
+                const geometry = child.geometry;
+                const material = child.material;
+                let materialCode = '';
+                if (material instanceof THREE.MeshNormalMaterial) {
+                    materialCode = 'new THREE.MeshNormalMaterial()';
+                } else if (material instanceof THREE.MeshBasicMaterial && material.map) {
+                    materialCode = `new THREE.MeshBasicMaterial({
+                        map: new THREE.TextureLoader().load('${child.userData.imageData}'),
+                        side: THREE.DoubleSide
+                    })`;
+                }
+                return `
+                    const geometry${child.id} = new THREE.BufferGeometry();
+                    geometry${child.id}.setAttribute('position', new THREE.Float32BufferAttribute(${JSON.stringify(Array.from(geometry.attributes.position.array))}, 3));
+                    geometry${child.id}.setAttribute('normal', new THREE.Float32BufferAttribute(${JSON.stringify(Array.from(geometry.attributes.normal.array))}, 3));
+                    const material${child.id} = ${materialCode};
+                    const mesh${child.id} = new THREE.Mesh(geometry${child.id}, material${child.id});
+                    mesh${child.id}.position.set(${child.position.x}, ${child.position.y}, ${child.position.z});
+                    mesh${child.id}.rotation.set(${child.rotation.x}, ${child.rotation.y}, ${child.rotation.z});
+                    scene.add(mesh${child.id});
+                `;
+            }
+        }).join('\n')}
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    `;
+
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Interactive 3D Scene</title>
+            <style>
+                body { margin: 0; }
+                canvas { display: block; }
+            </style>
+        </head>
+        <body>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+            <script>
+                ${threeJSCode}
+            </script>
+        </body>
+        </html>
+    `;
+
+    return htmlContent;
+}
+
+// Download interactive 3D scene
+downloadButton.addEventListener('click', () => {
+    const htmlContent = generateInteractiveHTML();
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'interactive_3d_scene.html';
+    link.click();
+});
+
 // Animate the 3D scene
 function animate() {
     requestAnimationFrame(animate);
@@ -154,3 +268,4 @@ function animate() {
 }
 
 animate();
+
