@@ -1,3 +1,4 @@
+
 const drawCanvas = document.getElementById('drawCanvas');
 const colorPicker = document.getElementById('colorPicker');
 const depthInput = document.getElementById('depth');
