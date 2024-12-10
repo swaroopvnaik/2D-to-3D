@@ -6,18 +6,25 @@ const imageUpload = document.getElementById('imageUpload');
 const addImagesTo3DButton = document.getElementById('addImagesTo3D');
 const clearButton = document.getElementById('clearButton');
 const downloadButton = document.getElementById('downloadButton');
+const shapeSelector = document.getElementById('shapeSelector');
 
 drawCanvas.width = window.innerWidth / 2;
 drawCanvas.height = window.innerHeight;
 const ctx = drawCanvas.getContext('2d');
 let isDrawing = false;
 let points = [];
+let currentShape = null;
 
 // Pencil color
 let currentColor = colorPicker.value;
 colorPicker.addEventListener('input', () => {
     currentColor = colorPicker.value;
     ctx.strokeStyle = currentColor;
+});
+
+// Shape selection
+shapeSelector.addEventListener('change', () => {
+    currentShape = shapeSelector.value;
 });
 
 // Drawing on canvas
@@ -27,21 +34,141 @@ drawCanvas.addEventListener('mousedown', (event) => {
     ctx.strokeStyle = currentColor;
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(event.offsetX, event.offsetY);
-    points.push({ x: event.offsetX - drawCanvas.width / 2, y: event.offsetY - drawCanvas.height / 2 });
+    const x = event.offsetX;
+    const y = event.offsetY;
+    ctx.moveTo(x, y);
+    points.push({ x: x - drawCanvas.width / 2, y: y - drawCanvas.height / 2 });
 });
 
 drawCanvas.addEventListener('mousemove', (event) => {
     if (isDrawing) {
-        ctx.lineTo(event.offsetX, event.offsetY);
-        ctx.stroke();
-        points.push({ x: event.offsetX - drawCanvas.width / 2, y: event.offsetY - drawCanvas.height / 2 });
+        const x = event.offsetX;
+        const y = event.offsetY;
+        if (currentShape === 'custom') {
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        } else {
+            ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+            drawShape(currentShape, points[0].x + drawCanvas.width / 2, points[0].y + drawCanvas.height / 2, x, y);
+        }
+        points.push({ x: x - drawCanvas.width / 2, y: y - drawCanvas.height / 2 });
     }
 });
 
 drawCanvas.addEventListener('mouseup', () => {
     isDrawing = false;
+    if (currentShape !== 'custom') {
+        const startPoint = points[0];
+        const endPoint = points[points.length - 1];
+        points = generateShapePoints(currentShape, startPoint, endPoint);
+    }
+    if (points.length > 2) {
+        const depth = parseInt(depthInput.value);
+        createSmooth3DShape(points, depth);
+    }
 });
+
+function drawShape(shape, startX, startY, endX, endY) {
+    ctx.beginPath();
+    switch (shape) {
+        case 'rectangle':
+            ctx.rect(startX, startY, endX - startX, endY - startY);
+            break;
+    
+        case 'circle':
+            const radius = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+            ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+            break;
+    
+        case 'triangle':
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.lineTo(startX - (endX - startX), endY);
+            ctx.closePath();
+            break;
+    
+        case 'pentagon':
+            const pentagonRadius = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+            const pentagonSides = 5;
+            for (let i = 0; i <= pentagonSides; i++) {
+                const angle = (i * 2 * Math.PI) / pentagonSides;
+                const x = startX + pentagonRadius * Math.cos(angle);
+                const y = startY + pentagonRadius * Math.sin(angle);
+                i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            break;
+    
+        case 'star':
+            const outerRadius = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+            const innerRadius = outerRadius / 2.5;
+            const starPoints = 5;
+            for (let i = 0; i <= 2 * starPoints; i++) {
+                const angle = (i * Math.PI) / starPoints;
+                const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                const x = startX + radius * Math.cos(angle);
+                const y = startY + radius * Math.sin(angle);
+                i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            break;
+    
+        case 'heart':
+            ctx.moveTo(startX, startY);
+            const curveWidth = endX - startX;
+            const curveHeight = endY - startY;
+    
+            ctx.bezierCurveTo(
+                startX - curveWidth, startY - curveHeight / 2, // Control point 1
+                startX, startY - curveHeight, // Control point 2
+                startX + curveWidth, startY // End point
+            );
+    
+            ctx.bezierCurveTo(
+                startX + 2 * curveWidth, startY - curveHeight / 2, // Control point 1
+                startX + curveWidth, startY + curveHeight, // Control point 2
+                startX, startY // End point
+            );
+            ctx.closePath();
+            break;
+    
+        // Add more shapes here
+    }
+    
+    ctx.stroke();
+}
+
+function generateShapePoints(shape, start, end) {
+    const points = [];
+    const numPoints = 50;
+    switch (shape) {
+        case 'rectangle':
+            for (let i = 0; i <= numPoints; i++) {
+                const t = i / numPoints;
+                if (i <= numPoints / 4) points.push({ x: start.x + (end.x - start.x) * (4 * t), y: start.y });
+                else if (i <= numPoints / 2) points.push({ x: end.x, y: start.y + (end.y - start.y) * (4 * t - 1) });
+                else if (i <= 3 * numPoints / 4) points.push({ x: end.x - (end.x - start.x) * (4 * t - 2), y: end.y });
+                else points.push({ x: start.x, y: end.y - (end.y - start.y) * (4 * t - 3) });
+            }
+            break;
+        case 'circle':
+            const centerX = (start.x + end.x) / 2;
+            const centerY = (start.y + end.y) / 2;
+            const radius = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)) / 2;
+            for (let i = 0; i <= numPoints; i++) {
+                const angle = (i / numPoints) * 2 * Math.PI;
+                points.push({ x: centerX + radius * Math.cos(angle), y: centerY + radius * Math.sin(angle) });
+            }
+            break;
+        case 'triangle':
+            points.push(start);
+            points.push(end);
+            points.push({ x: start.x - (end.x - start.x), y: end.y });
+            break;
+        // Add more shapes here
+    }
+    return points;
+}
 
 // Setup the 3D scene
 const container = document.getElementById('3dContainer');
@@ -176,7 +303,7 @@ clearButton.addEventListener('click', () => {
 function generateInteractiveHTML() {
     const threeJSCode = `
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectivePerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);

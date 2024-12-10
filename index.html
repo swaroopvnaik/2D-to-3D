@@ -13,16 +13,27 @@
         <label for="depth">3D Depth:</label>
         <input type="number" id="depth" value="5" min="1" max="50" step="1">
         <button id="convertTo3D">Convert Drawing to 3D</button>
-        <br>
+        <label for="shapeSelector">Select Shape:</label>
+        <select id="shapeSelector">
+            <option value="custom">Custom Draw</option>
+            <option value="rectangle">Rectangle</option>
+            <option value="circle">Circle</option>
+            <option value="triangle">Triangle</option>
+            <option value="pentagon">Pentagon</option>
+            <option value="hexagon">Hexagon</option>
+            <option value="star">Star</option>
+            <option value="heart">Heart</option>
+        </select>
         <label for="imageUpload">Upload Image(s):</label>
         <input type="file" id="imageUpload" multiple accept="image/*">
         <button id="addImagesTo3D">Add Images to 3D</button>
-        <br>
         <button id="clearButton">Clear All</button>
         <button id="downloadButton">Download Interactive 3D Scene</button>
     </div>
-    <canvas id="drawCanvas"></canvas>
-    <div id="3dContainer"></div>
+    <div class="canvas-container">
+        <canvas id="drawCanvas"></canvas>
+        <div id="3dContainer"></div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>

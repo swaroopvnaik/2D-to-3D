@@ -1,6 +1,7 @@
 body {
     margin: 0;
     display: flex;
+    flex-direction: column;
     height: 100vh;
     overflow: hidden;
     font-family: Arial, sans-serif;
@@ -10,20 +11,18 @@ body {
 
 /* Toolbar Styling */
 #toolbar {
-    position: absolute;
-    top: 20px;
-    z-index: 10;
+    width: 100%;
     background: rgba(255, 255, 255, 0.9);
-    padding: 25px;
-    margin-left: 50px;
-    border-radius: 10px;
+    padding: 15px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     animation: fadeIn 2.5s ease-in-out;
+    z-index: 10;
 }
 
 #toolbar input,
-#toolbar button {
-    margin: 5px 0;
+#toolbar button,
+#toolbar select {
+    margin: 5px;
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 5px;
@@ -41,16 +40,28 @@ body {
     background: #557fc2;
 }
 
+/* Canvas Container */
+.canvas-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
 /* Canvas Styling */
 #drawCanvas {
-    flex: 1;
+    width: 50%;
+    height: 100%;
     background-color: rgba(255, 255, 255, 0.5);
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
     animation: fadeInCanvas 1.2s ease-out;
 }
 
+#3dContainer {
+    width: 50%;
+    height: 100%;
+}
+
 #3dContainer canvas {
-    display: block;
     width: 100%;
     height: 100%;
     animation: scaleIn 3s ease-out;
